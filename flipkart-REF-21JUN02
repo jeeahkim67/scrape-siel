@@ -14,11 +14,14 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver import ActionChains
 from bs4 import BeautifulSoup
+import csv
+import openpyxl
 import pandas as pd
 import requests
 import os
 import time
 from openpyxl import load_workbook
+from bs4 import BeautifulSoup 
 
 
 options = webdriver.ChromeOptions()
@@ -31,15 +34,14 @@ driver = webdriver.Chrome('chromedriver',options=options)
 
 print('!! BASIC SETTING COMPLETE !!')
 
-
-Price_infos = []
+Price_infos_FK = []
 
 driver.get(f'https://www.flipkart.com/search?sid=j9e%2Fabm%2Fhzg&otracker=CLP_Filters&p%5B%5D=facets.brand%255B%255D%3DLG&p%5B%5D=facets.brand%255B%255D%3DWhirlpool&p%5B%5D=facets.brand%255B%255D%3DHaier&p%5B%5D=facets.brand%255B%255D%3DGodrej&p%5B%5D=facets.brand%255B%255D%3DSAMSUNG&p%5B%5D=facets.brand%255B%255D%3DPanasonic')
 
-last_number = int(driver.find_element_by_xpath('//*[@id="container"]/div/div[3]/div/div[2]/div[26]/div/div/span[1]').text[10:])
+last_number_FK = int(driver.find_element_by_xpath('//*[@id="container"]/div/div[3]/div/div[2]/div[26]/div/div/span[1]').text[10:])
 
 
-for i in range(1,last_number+1):   
+for i in range(1,last_number_FK+1):   
 
     time.sleep(0.3)
     print('Current page is : ' + str(i) )    
@@ -58,14 +60,60 @@ for i in range(1,last_number+1):
         price = driver.find_element_by_xpath('//*[@id="container"]/div/div[3]/div/div[2]/div['+str(j)+']/div/div/div/a/div[2]/div[2]/div[1]/div/div[1]').text[1:]
         link = driver.find_element_by_xpath('//*[@id="container"]/div/div[3]/div/div[2]/div['+str(j)+']/div/div/div/a').get_attribute('href')
 
-        Price_info = [name, mrp, price, link]
-        Price_infos.append(Price_info)
+        Price_info_FK = [name, mrp, price, link]
+        Price_infos_FK.append(Price_info_FK)
 
 print('!! PRICE INFO COMPLETE !!')
 
 data = pd.DataFrame(Price_infos)
 data.columns = ['Name', 'MRP', 'Price', "URL"]
 
-data.to_excel('/content/Price_Info_Flipkart_REF_2021JUN02.xlsx') #날짜update
+data.to_excel('/content/Price_Info_Flipkart_REF_2021JUN09.xlsx')
 
 print('!! FIND FILE !!')
+
+Price_infos_AZ = []
+
+driver.get(f'https://www.amazon.in/s?i=kitchen&bbn=1380365031&rh=n%3A1380365031%2Cp_89%3AGodrej%7CHaier%7CLG%7CSamsung%7CWhirlpool&dc&qid=1622633643&rnid=3837712031&ref=sr_nr_p_89_6')
+
+last_number_AZ = int(driver.find_element_by_xpath('//*[@id="search"]/div[1]/div/div[1]/div/span[3]/div[2]/div[25]/span/div/div/ul/li[6]').text)
+
+
+for i in range(1,last_number_AZ+1):   
+
+    time.sleep(0.3)
+    print('Current page is : ' + str(i) )    
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);") #Scroll to the end of the page
+    time.sleep(1)  #sleep_between_interactions
+
+    for j in range(2,25):
+        try:
+            name = driver.find_element_by_xpath('//*[@id="search"]/div[1]/div/div[1]/div/span[3]/div[2]/div['+str(j)+']/div/span/div/div/div[2]/h2/a/span').text
+        
+        except:
+        #이름이 없다는 건 마지막 페이지이고(마지막페이지만 24개 이하 상품이 존재), Break를 써서 종료시켜줌
+            break
+
+        try:
+          mrp = driver.find_element_by_xpath('//*[@id="search"]/div[1]/div/div[1]/div/span[3]/div[2]/div['+str(j)+']/div/span/div/div/div[4]/div/a/span[2]/span[1]').text
+        except:
+          mrp = "N/A"
+        try:
+          price = driver.find_element_by_xpath('//*[@id="search"]/div[1]/div/div[1]/div/span[3]/div[2]/div['+str(j)+']/div/span/div/div/div[4]/div/a/span[1]/span[2]/span[2]').text
+        except:
+          price = "N/A"
+        link = driver.find_element_by_xpath('//*[@id="search"]/div[1]/div/div[1]/div/span[3]/div[2]/div['+str(j)+']/div/span/div/div/div[2]/h2/a').get_attribute('href')
+
+        Price_info_AZ = [name, mrp, price, link]
+        Price_infos_AZ.append(Price_info_AZ)
+
+
+print('!! PRICE INFO COMPLETE !!')
+
+data = pd.DataFrame(Price_infos_AZ)
+data.columns = ['Name', 'MRP', 'Price', "URL"]
+
+data.to_excel('/content/Price_Info_Amazon_REF_2021JUN09.xlsx')
+
+print('!! FIND FILE !!')
+
